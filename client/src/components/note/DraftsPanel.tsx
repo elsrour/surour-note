@@ -59,7 +59,7 @@ export default function DraftsPanel({
               <FileText className="mx-auto mb-2 h-6 w-6 text-[#b3a992]" />
               <p className="text-sm font-semibold text-[#445270]">لا توجد سندات محفوظة بعد</p>
               <p className="mt-1 text-[0.72rem] text-[#8c8371]">
-                املأ بيانات السند ثم اضغط «حفظ» ليظهر هنا.
+                أنشئ أول سند ليُحفظ هنا وتستطيع فتحه أو طباعته لاحقًا.
               </p>
             </div>
           )}

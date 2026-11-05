@@ -94,55 +94,7 @@ export default function NoteForm({ data, onChange }: Props) {
 
   return (
     <div className="space-y-3 pb-24">
-      <Section index={1} title="بيانات المكتب" >
-        <Field label="اسم المكتب">
-          <input
-            className="field-input"
-            value={data.officeName}
-            onChange={(event) => onChange("officeName", event.target.value)}
-            placeholder="مكتب السرور"
-          />
-        </Field>
-        <Field label="الوصف أسفل اسم المكتب">
-          <input
-            className="field-input"
-            value={data.officeSubtitle}
-            onChange={(event) => onChange("officeSubtitle", event.target.value)}
-            placeholder="للخدمات القانونية والتعقيب"
-          />
-        </Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="هاتف المكتب">
-            <input
-              className="field-input"
-              value={data.officePhone}
-              onChange={(event) => onChange("officePhone", event.target.value)}
-              inputMode="tel"
-            />
-          </Field>
-          <Field label="المدينة / العنوان">
-            <input
-              className="field-input"
-              value={data.officeAddress}
-              onChange={(event) => onChange("officeAddress", event.target.value)}
-            />
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Toggle
-            label="ترويسة المكتب"
-            checked={data.showLetterhead}
-            onChange={(value) => onChange("showLetterhead", value)}
-          />
-          <Toggle
-            label="تذييل الورقة"
-            checked={data.showFooter}
-            onChange={(value) => onChange("showFooter", value)}
-          />
-        </div>
-      </Section>
-
-      <Section index={2} title="بيانات السند">
+      <Section index={1} title="بيانات السند">
         <div className="grid grid-cols-2 gap-2">
           <Field label="عنوان السند">
             <input
@@ -225,7 +177,7 @@ export default function NoteForm({ data, onChange }: Props) {
         </Field>
       </Section>
 
-      <Section index={3} title="المبلغ">
+      <Section index={2} title="المبلغ">
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <Field label="المبلغ رقمًا">
             <input
@@ -261,7 +213,7 @@ export default function NoteForm({ data, onChange }: Props) {
         </Field>
       </Section>
 
-      <Section index={4} title="المحرر (المدين)">
+      <Section index={3} title="المحرر (المدين) والمستفيد">
         <Field label="اسم المحرر">
           <input
             className="field-input"
@@ -305,75 +257,7 @@ export default function NoteForm({ data, onChange }: Props) {
         </Field>
       </Section>
 
-      <Section index={5} title="الكفيل الضامن الأول">
-        <Field label="المسمى">
-          <input
-            className="field-input"
-            value={data.guarantor1Title}
-            onChange={(event) => onChange("guarantor1Title", event.target.value)}
-          />
-        </Field>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Field label="الاسم">
-            <input
-              className="field-input"
-              value={data.g1Name}
-              onChange={(event) => onChange("g1Name", event.target.value)}
-            />
-          </Field>
-          <Field label="الهوية">
-            <input
-              className="field-input w-32 text-left"
-              dir="ltr"
-              value={data.g1Id}
-              onChange={(event) => onChange("g1Id", event.target.value)}
-            />
-          </Field>
-        </div>
-        <Field label="العنوان">
-          <input
-            className="field-input"
-            value={data.g1Address}
-            onChange={(event) => onChange("g1Address", event.target.value)}
-          />
-        </Field>
-      </Section>
-
-      <Section index={6} title="الكفيل الضامن الثاني">
-        <Field label="المسمى">
-          <input
-            className="field-input"
-            value={data.guarantor2Title}
-            onChange={(event) => onChange("guarantor2Title", event.target.value)}
-          />
-        </Field>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Field label="الاسم">
-            <input
-              className="field-input"
-              value={data.g2Name}
-              onChange={(event) => onChange("g2Name", event.target.value)}
-            />
-          </Field>
-          <Field label="الهوية">
-            <input
-              className="field-input w-32 text-left"
-              dir="ltr"
-              value={data.g2Id}
-              onChange={(event) => onChange("g2Id", event.target.value)}
-            />
-          </Field>
-        </div>
-        <Field label="العنوان">
-          <input
-            className="field-input"
-            value={data.g2Address}
-            onChange={(event) => onChange("g2Address", event.target.value)}
-          />
-        </Field>
-      </Section>
-
-      <Section index={7} title="التذييل والملاحظات">
+      <Section index={4} title="التذييل والملاحظات">
         <Field label="نص الصندوق السفلي">
           <input
             className="field-input"
@@ -391,7 +275,7 @@ export default function NoteForm({ data, onChange }: Props) {
             className="field-input min-h-[80px] resize-y leading-6"
             value={data.notes}
             onChange={(event) => onChange("notes", event.target.value)}
-            placeholder="شروط أو ملاحظات إضافية تظهر أسفل الكفيلين"
+            placeholder="شروط أو ملاحظات إضافية تظهر على السند"
           />
         )}
       </Section>

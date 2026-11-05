@@ -1,31 +1,23 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
+  CheckCircle2,
   FilePlus2,
   FolderOpen,
-  Minus,
-  Plus,
   Printer,
-  Save,
-  Scan,
-  Eye,
-  PenLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import DraftsPanel from "@/components/note/DraftsPanel";
 import NoteForm from "@/components/note/NoteForm";
 import NoteSheet from "@/components/note/NoteSheet";
 import { tafqeet } from "@/lib/tafqeet";
-import {
-  describeNote,
-  loadStore,
-  makeId,
-  nextDocNumber,
-  persistStore,
-} from "@/lib/storage";
+import { describeNote, loadStore, makeId, nextDocNumber, persistStore } from "@/lib/storage";
 import type { NoteData, SavedNote } from "@/lib/types";
 import { createEmptyNote } from "@/lib/types";
 
 const A4_WIDTH_PX = 793.7;
+const A4_HEIGHT_PX = 1122.5;
+type Stage = "form" | "result";
 
 export default function Home() {
   const [initialStore] = useState(() => loadStore());
@@ -33,89 +25,89 @@ export default function Home() {
   const [saved, setSaved] = useState<SavedNote[]>(initialStore.saved);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draftsOpen, setDraftsOpen] = useState(false);
-  const [tab, setTab] = useState<"edit" | "preview">("edit");
-  const [zoom, setZoom] = useState<number | "fit">("fit");
-  const [fitScale, setFitScale] = useState(0.62);
+  const [stage, setStage] = useState<Stage>("form");
   const [savedPulse, setSavedPulse] = useState(false);
-  const stageRef = useRef<HTMLDivElement>(null);
+  const [fitScale, setFitScale] = useState(0.46);
+  const resultRef = useRef<HTMLDivElement>(null);
 
-  /* ملاءمة عرض المعاينة */
   useEffect(() => {
-    const element = stageRef.current;
+    const timer = window.setTimeout(() => {
+      if (persistStore({ current: data, saved })) {
+        setSavedPulse(true);
+        window.setTimeout(() => setSavedPulse(false), 1400);
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [data, saved]);
+
+  useEffect(() => {
+    if (stage !== "result") return;
+    const element = resultRef.current;
     if (!element) return;
 
     const measure = () => {
-      const available = element.clientWidth - 72;
-      setFitScale(Math.min(1, Math.max(0.3, available / A4_WIDTH_PX)));
+      const available = element.clientWidth - 24;
+      setFitScale(Math.min(1, Math.max(0.28, available / A4_WIDTH_PX)));
     };
-
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
-  }, []);
-
-  /* حفظ تلقائي */
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const ok = persistStore({ current: data, saved });
-      if (ok) {
-        setSavedPulse(true);
-        window.setTimeout(() => setSavedPulse(false), 1200);
-      }
-    }, 400);
-
-    return () => window.clearTimeout(timer);
-  }, [data, saved]);
+  }, [stage]);
 
   const update = useCallback(<K extends keyof NoteData>(key: K, value: NoteData[K]) => {
     setData((previous) => {
       const next = { ...previous, [key]: value } as NoteData;
-
-      const shouldRecalculate =
-        next.autoWords && (key === "amount" || key === "currency" || key === "autoWords");
-
-      if (shouldRecalculate) {
+      if (next.autoWords && (key === "amount" || key === "currency" || key === "autoWords")) {
         next.amountWords = tafqeet(next.amount, next.currency);
       }
-
       return next;
     });
   }, []);
 
-  const handleSave = () => {
-    const now = Date.now();
-    const id = activeId ?? makeId();
-    const entry: SavedNote = {
-      id,
-      title: describeNote(data),
-      updatedAt: now,
-      data,
-    };
+  const handleCreate = () => {
+    if (!data.amount.trim() || !data.payerName.trim()) {
+      toast.error("أكمل البيانات الأساسية", {
+        description: "يرجى إدخال المبلغ واسم محرر السند قبل الإنشاء.",
+      });
+      return;
+    }
 
-    setSaved((previous) => {
-      const exists = previous.some((note) => note.id === id);
-      return exists
-        ? previous.map((note) => (note.id === id ? entry : note))
-        : [entry, ...previous];
+    const entry: SavedNote = {
+      id: activeId ?? makeId(),
+      title: describeNote(data),
+      updatedAt: Date.now(),
+      data: { ...data },
+    };
+    setSaved((previous) =>
+      previous.some((note) => note.id === entry.id)
+        ? previous.map((note) => (note.id === entry.id ? entry : note))
+        : [entry, ...previous],
+    );
+    setActiveId(entry.id);
+    setStage("result");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast.success(activeId ? "تم تحديث السند" : "تم إنشاء السند", {
+      description: `رقم ${data.docNumber || "—"}`,
     });
-    setActiveId(id);
-    toast.success("تم حفظ السند", { description: `رقم ${data.docNumber || "—"}` });
   };
 
   const handleNew = () => {
+    const activeNote = saved.find((note) => note.id === activeId);
+    const hasUncreatedContent = !activeId && [data.payerName, data.amount, data.payee, data.payerAddress].some((value) => value.trim());
+    const hasActiveChanges = Boolean(activeNote && JSON.stringify(activeNote.data) !== JSON.stringify(data));
+
+    if (hasUncreatedContent && !window.confirm("البيانات الحالية لم تُنشأ بعد. هل تريد بدء سند جديد واستبدالها؟")) return;
+    if (hasActiveChanges && activeNote) {
+      const updated = { ...activeNote, title: describeNote(data), updatedAt: Date.now(), data: { ...data } };
+      setSaved((previous) => previous.map((note) => note.id === activeNote.id ? updated : note));
+    }
+
     const number = nextDocNumber(data, saved);
-    const fresh = createEmptyNote(number);
-    fresh.officeName = data.officeName;
-    fresh.officeSubtitle = data.officeSubtitle;
-    fresh.officePhone = data.officePhone;
-    fresh.officeAddress = data.officeAddress;
-    fresh.showLetterhead = data.showLetterhead;
-    fresh.showFooter = data.showFooter;
-    fresh.city = data.city;
-    fresh.currency = data.currency;
-    setData(fresh);
+    setData(createEmptyNote(number));
     setActiveId(null);
+    setStage("form");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     toast.info("سند جديد", { description: `رقم السند ${number}` });
   };
 
@@ -123,218 +115,125 @@ export default function Home() {
     setData(note.data);
     setActiveId(note.id);
     setDraftsOpen(false);
-    setTab("preview");
+    setStage("result");
+    window.scrollTo({ top: 0, behavior: "smooth" });
     toast.success("تم فتح السند", { description: `رقم ${note.data.docNumber || "—"}` });
   };
 
   const handleDuplicate = (note: SavedNote) => {
+    const docNumber = nextDocNumber(note.data, saved);
+    const copyData = { ...note.data, docNumber };
     const copy: SavedNote = {
       id: makeId(),
-      title: describeNote(note.data),
+      title: describeNote(copyData),
       updatedAt: Date.now(),
-      data: { ...note.data, docNumber: nextDocNumber(note.data, saved) },
+      data: copyData,
     };
     setSaved((previous) => [copy, ...previous]);
     setData(copy.data);
     setActiveId(copy.id);
     setDraftsOpen(false);
+    setStage("result");
     toast.success("تم تكرار السند", { description: `رقم ${copy.data.docNumber}` });
   };
 
   const handleDelete = (id: string) => {
     const target = saved.find((note) => note.id === id);
-    const confirmed = window.confirm(`حذف السند رقم ${target?.data.docNumber || ""} نهائيًا؟`);
-    if (!confirmed) return;
-
+    if (!window.confirm(`حذف السند رقم ${target?.data.docNumber || ""} نهائيًا؟`)) return;
     setSaved((previous) => previous.filter((note) => note.id !== id));
-    if (activeId === id) setActiveId(null);
+    if (activeId === id) {
+      setActiveId(null);
+      setStage("form");
+    }
     toast.success("تم حذف السند");
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const scale = zoom === "fit" ? fitScale : zoom;
-
-  const generatedWords = useMemo(
-    () => (data.autoWords ? tafqeet(data.amount, data.currency) : data.amountWords),
-    [data.amount, data.currency, data.autoWords, data.amountWords],
-  );
-
-  const wordsMissing = data.amount.trim() !== "" && generatedWords.trim() === "";
+  const handlePrint = () => window.print();
 
   return (
-    <div className="studio-shell app-shell flex min-h-screen flex-col">
-      {/* ================= الشريط العلوي ================= */}
-      <header className="no-print sticky top-0 z-30 border-b border-[#ded6c6]/80 bg-[#fbf8f2]/90 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1500px] flex-wrap items-center gap-3 px-4 py-2.5">
-          <div className="flex items-center gap-3">
-            <div className="seal" aria-hidden="true">
-              س
-            </div>
-            <div className="leading-tight">
-              <div className="font-['Naskh'] text-[1.15rem] font-bold text-[#12326b]">
-                {data.officeName || "مكتب السرور"}
-              </div>
-              <div className="text-[0.68rem] tracking-wide text-[#8c8371]">
-                منشئ سند لأمر · جاهز للطباعة
-              </div>
+    <div className="studio-shell app-shell min-h-screen" dir="rtl">
+      <header className="app-header no-print">
+        <div className="app-header__inner">
+          <div className="app-brand">
+            <div className="seal" aria-hidden="true">س</div>
+            <div>
+              <div className="app-brand__name">مكتب السرور</div>
+              <div className="app-brand__sub">إصدار سند لأمر</div>
             </div>
           </div>
-
-          <div className="mr-auto flex items-center gap-1.5 sm:gap-2">
-            <span className="hidden items-center gap-1.5 rounded-full border border-[#d9d1c1] bg-white/70 px-2.5 py-1 text-[0.68rem] font-semibold text-[#5a6a8c] lg:flex">
-              <Scan className="h-3 w-3" /> A4 · 210×297mm
-            </span>
-            <button
-              type="button"
-              onClick={handleNew}
-              className="btn-ghost flex items-center gap-1.5 px-2.5 py-2 text-[0.8rem] sm:px-3"
-              aria-label="سند جديد"
-            >
-              <FilePlus2 className="h-4 w-4" /> <span className="hidden sm:inline">سند جديد</span>
+          <div className="app-header__actions">
+            <button type="button" onClick={() => setDraftsOpen(true)} className="btn-ghost header-action">
+              <FolderOpen className="h-4 w-4" />
+              <span>السندات</span>
+              <span className="action-count">{saved.length}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setDraftsOpen(true)}
-              className="btn-ghost flex items-center gap-1.5 px-2.5 py-2 text-[0.8rem] sm:px-3"
-              aria-label="السندات المحفوظة"
-            >
-              <FolderOpen className="h-4 w-4" /> <span className="hidden sm:inline">سنداتي</span>
-              <span className="rounded-full bg-[#12326b]/10 px-1.5 text-[0.68rem] text-[#12326b]">
-                {saved.length}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className="btn-ghost flex items-center gap-1.5 px-2.5 py-2 text-[0.8rem] sm:px-3"
-              aria-label="حفظ"
-            >
-              <Save className="h-4 w-4" /> <span className="hidden sm:inline">حفظ</span>
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="btn-ink flex items-center gap-1.5 px-3 py-2 text-[0.82rem] sm:px-4 sm:text-[0.85rem]"
-            >
-              <Printer className="h-4 w-4 sm:h-[1.05rem] sm:w-[1.05rem]" />
-              <span className="hidden xs:inline sm:inline">طباعة</span>
+            <button type="button" onClick={handleNew} className="btn-ghost header-action">
+              <FilePlus2 className="h-4 w-4" />
+              <span>سند جديد</span>
             </button>
           </div>
-        </div>
-
-        {/* تبويبات الجوال */}
-        <div className="flex gap-1 border-t border-[#e6dfd0] px-3 py-1.5 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setTab("edit")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold ${
-              tab === "edit" ? "bg-[#12326b] text-white" : "text-[#5a6a8c]"
-            }`}
-          >
-            <PenLine className="h-3.5 w-3.5" /> البيانات
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("preview")}
-            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[0.78rem] font-semibold ${
-              tab === "preview" ? "bg-[#12326b] text-white" : "text-[#5a6a8c]"
-            }`}
-          >
-            <Eye className="h-3.5 w-3.5" /> المعاينة
-          </button>
         </div>
       </header>
 
-      <main className="app-main mx-auto flex w-full max-w-[1500px] flex-1 flex-col lg:flex-row">
-        {/* ================= المحرر ================= */}
-        <aside
-          className={`no-print w-full shrink-0 border-l border-[#e2dbcb] bg-[#f7f3ea]/60 lg:w-[392px] lg:overflow-y-auto lg:h-[calc(100vh-64px)] ${
-            tab === "edit" ? "block" : "hidden lg:block"
-          }`}
-        >
-          <div className="sticky top-0 z-10 border-b border-[#e6dfd0] bg-[#f7f3ea]/95 px-4 py-2.5 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-[0.92rem] font-bold text-[#12326b]">بيانات السند</h1>
-                <p className="text-[0.7rem] text-[#8c8371]">
-                  {savedPulse ? "جارٍ حفظ المسودة تلقائيًا…" : "كل تعديل يظهر فورًا في الورقة"}
-                </p>
+      {stage === "form" ? (
+        <main className="form-screen no-print">
+          <div className="form-container">
+            <div className="form-intro">
+              <div className="step-kicker"><span>١</span> إدخال البيانات <i /> <span className="step-kicker__muted">٢</span> إصدار وطباعة</div>
+              <h1>بيانات السند</h1>
+              <p>أدخل بيانات السند، ثم أنشئه لعرض النسخة النهائية وطباعتها.</p>
+            </div>
+
+            <form onSubmit={(event) => { event.preventDefault(); handleCreate(); }}>
+              <NoteForm data={data} onChange={update} />
+              <div className="form-submit panel-card">
+                <div>
+                  <div className="form-submit__title">جاهز لإصدار السند؟</div>
+                  <div className="form-submit__hint">
+                    {savedPulse ? "تم حفظ التغييرات على هذا الجهاز" : "بياناتك محفوظة تلقائيًا على هذا الجهاز"}
+                  </div>
+                </div>
+                <button type="submit" className="btn-ink create-button">
+                  <CheckCircle2 className="h-5 w-5" />
+                  {activeId ? "حفظ التعديلات وعرض السند" : "إنشاء السند"}
+                </button>
               </div>
-              {wordsMissing && (
-                <span className="rounded-md bg-[#a4242b]/10 px-2 py-1 text-[0.65rem] font-semibold text-[#a4242b]">
-                  راجع المبلغ
-                </span>
-              )}
-            </div>
+            </form>
           </div>
-
-          <div className="p-3">
-            <NoteForm data={data} onChange={update} />
-          </div>
-        </aside>
-
-        {/* ================= المعاينة ================= */}
-        <section
-          className={`preview-col relative flex min-h-[60vh] flex-1 flex-col lg:h-[calc(100vh-64px)] ${
-            tab === "preview" ? "flex" : "hidden lg:flex"
-          }`}
-        >
-          <div className="preview-grid pointer-events-none absolute inset-0 opacity-70" aria-hidden="true" />
-
-          <div className="no-print relative z-10 flex items-center justify-between gap-3 px-4 py-2.5">
-            <div className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-white/55">
-              معاينة الطباعة
+        </main>
+      ) : (
+        <main className="result-screen">
+          <div className="result-container">
+            <div className="result-heading no-print">
+              <div className="result-heading__copy">
+                <div className="step-kicker step-kicker--success"><CheckCircle2 className="h-4 w-4" /> تم إنشاء السند</div>
+                <h1>السند رقم {data.docNumber || "—"}</h1>
+                <p>راجع النسخة النهائية أدناه، ويمكنك الرجوع للتعديل أو الطباعة.</p>
+              </div>
+              <div className="result-actions">
+                <button type="button" onClick={() => setStage("form")} className="btn-ghost result-action">
+                  <ArrowLeft className="h-4 w-4" /> تعديل البيانات
+                </button>
+                <button type="button" onClick={handlePrint} className="btn-ink result-action result-action--primary">
+                  <Printer className="h-4 w-4" /> طباعة السند
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1 backdrop-blur">
-              <button
-                type="button"
-                onClick={() => setZoom((value) => Math.max(0.3, (value === "fit" ? fitScale : value) - 0.1))}
-                className="grid h-6 w-6 place-items-center rounded text-white/80 hover:bg-white/15"
-                aria-label="تصغير"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <span className="min-w-[46px] text-center text-[0.7rem] font-semibold text-white/80">
-                {Math.round(scale * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={() => setZoom((value) => Math.min(1.4, (value === "fit" ? fitScale : value) + 0.1))}
-                className="grid h-6 w-6 place-items-center rounded text-white/80 hover:bg-white/15"
-                aria-label="تكبير"
-              >
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom("fit")}
-                className={`rounded px-2 py-1 text-[0.66rem] font-semibold ${
-                  zoom === "fit" ? "bg-white text-[#12326b]" : "text-white/75 hover:bg-white/15"
-                }`}
-              >
-                ملاءمة
-              </button>
-            </div>
-          </div>
 
-          <div ref={stageRef} className="preview-stage relative z-10 flex-1 overflow-auto px-4 pb-10">
-            <div className="preview-paper mx-auto" style={{ width: A4_WIDTH_PX * scale }}>
+            <div ref={resultRef} className="result-paper-stage">
               <div
-                className="sheet-scale"
-                style={{ "--sheet-scale": scale } as React.CSSProperties}
+                className="result-paper"
+                style={{ width: A4_WIDTH_PX * fitScale, height: A4_HEIGHT_PX * fitScale }}
               >
-                <NoteSheet data={data} />
+                <div className="sheet-scale" style={{ "--sheet-scale": fitScale } as React.CSSProperties}>
+                  <NoteSheet data={data} />
+                </div>
               </div>
             </div>
-            <p className="no-print mx-auto mt-4 max-w-md text-center text-[0.68rem] leading-5 text-white/40">
-              الورقة معاينة حقيقية بمقاس A4 — الطباعة تُخرج السند وحده دون أي عناصر من الواجهة.
-            </p>
+            <div className="result-footnote no-print">هذه معاينة السند بعد إنشائه — اطبعها على ورق A4.</div>
           </div>
-        </section>
-      </main>
+        </main>
+      )}
 
       <DraftsPanel
         open={draftsOpen}
