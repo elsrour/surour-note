@@ -1,14 +1,57 @@
-# مكتب السرور - منشئ سند لأمر
+# مكتب السرور — منشئ سند لأمر
 
-React / Express / tRPC / Drizzle starter, adapted from the Sandbox web-db-user template.
+تطبيق ويب عربي (RTL) لإنشاء **سند لأمر** بهوية «مكتب السرور» وتصميم مطابق للنموذج الورقي المعتمد:
+إطار أزرق مزدوج، ترويسة «سند لأمر» بخط سفلي، رقم السند باللون الأحمر، سطور منقّطة للتعبئة،
+جدول الكفيل الضامن الأول والثاني، وصندوق «لحاملة حق الرجوع دون مصاريف أو احتجاج».
 
-- `pnpm dev`: development server; honors `PORT` (default 3000).
-- `pnpm build` / `pnpm start`: build and serve `dist/index.js` and `dist/public/`.
-- `pnpm db:migrate`: apply checked-in migrations. `pnpm db:push`: generate and apply new schema changes.
-- `pnpm check` / `pnpm test`: types and application tests.
+## المزايا
 
-Start with the Webdev skill's default-template guide. Platform login, storage, payments and service contracts live in its shared references; read the relevant capability before extending its helper.
+- محرر بيانات كامل مع معاينة حيّة للورقة بمقاس A4 أثناء الكتابة.
+- تفقيط تلقائي للمبلغ بالحروف العربية (ريال/هللة) مع إمكانية التعديل اليدوي.
+- تاريخ هجري (أم القرى) بضغطة زر، وتاريخ ميلادي اختياري.
+- حفظ السندات على الجهاز (localStorage)، استرجاع، تكرار، حذف، وترقيم تلقائي للسند التالي.
+- طباعة نظيفة: تُخفي الواجهة وتطبع السند وحده بمقاس A4 وبحدوده وألوانه، أو حفظه PDF من حوار الطباعة.
+- واجهة متجاوبة: عمودان على سطح المكتب وتبويبان (البيانات/المعاينة) على الجوال.
 
-`server/_core/publicConfig.ts` exposes only named public runtime values. Private keys stay server-side. The platform serves managed `/manus-storage/` assets; the application does not register a second proxy.
+## التشغيل
 
-Platform configuration is readable and editable through `webdev.config`. Default settings are initial values, not enforced constraints. The agent may modify the files, commands and configuration or follow the flexible guide for another stack.
+```sh
+pnpm install
+pnpm dev:static     # http://localhost:3000
+pnpm build:static   # ملفات الإنتاج في dist/public
+pnpm check          # فحص الأنواع
+```
+
+## النشر على Vercel
+
+المشروع مهيأ بـ `vercel.json`:
+
+- أمر التثبيت: `pnpm install --frozen-lockfile`
+- أمر البناء: `pnpm build:static`
+- مجلد الإخراج: `dist/public`
+
+يكفي استيراد المستودع في Vercel ثم النشر، أو استخدام Vercel CLI بـ `vercel --prod`.
+
+## البنية
+
+```
+client/
+  index.html                  قالب HTML عربي RTL + الخطوط المحلية
+  public/fonts/               Noto Naskh Arabic + Cairo (woff2 مستضافة ذاتيًا)
+  public/logo.svg             شعار المكتب
+  public/manus-routes.json    بيان المسارات
+  src/pages/Home.tsx          شريط الأدوات + المحرر + المعاينة
+  src/components/note/
+    NoteSheet.tsx             الورقة المطبوعة (A4) — مصدر واحد للمعاينة والطباعة
+    NoteForm.tsx              حقول الإدخال
+    DraftsPanel.tsx           السندات المحفوظة
+  src/lib/
+    types.ts                  أنواع البيانات والقيم الافتراضية
+    storage.ts                التخزين المحلي والترقيم
+    tafqeet.ts                تحويل المبلغ إلى كلمات عربية
+```
+
+## ملاحظات
+
+- البيانات تُحفظ في متصفح المستخدم فقط، ولا تُرسل إلى أي خادم.
+- الخطوط مستضافة داخل المشروع لضمان ثبات شكل السند عند الطباعة دون الاعتماد على مصادر خارجية.

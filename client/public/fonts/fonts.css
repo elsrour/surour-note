@@ -1,0 +1,145 @@
+/* Self-hosted Arabic web fonts (subset: arabic + latin). */
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/naskh-400-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/naskh-400-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/naskh-500-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/naskh-500-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/naskh-600-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/naskh-600-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/naskh-700-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Naskh";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/naskh-700-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/cairo-400-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/cairo-400-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/cairo-500-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/cairo-500-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/cairo-600-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/cairo-600-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/cairo-700-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/cairo-700-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/cairo-800-arabic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cairo";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/cairo-800-latin.woff2") format("woff2");
+}
